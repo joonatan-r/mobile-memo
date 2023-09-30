@@ -35,6 +35,7 @@ function App(): JSX.Element {
   const scrollRef = useRef(0);
   const scrollViewRef = useRef<any>();
   const textScrollRef = useRef(0);
+  const scrollWhenPressRef = useRef(0);
   const textScrollViewRef = useRef<any>();
   const [touch, setTouch] = useState<{ x: number, y: number } | undefined>();
   const touchRef = useRef<{ x: number, y: number } | undefined>();
@@ -93,8 +94,15 @@ function App(): JSX.Element {
       },
     );
     Keyboard.addListener('keyboardDidShow', e => {
-      // const { height, screenX, screenY, width } = e.endCoordinates;
+      const { height, screenX, screenY, width } = e.endCoordinates;
       kbVisibleRef.current = true;
+
+      if (pressRef.current && pressRef.current > screenY - 50) {
+        textScrollViewRef.current?.scrollTo({
+          y: scrollWhenPressRef.current + pressRef.current - 200,
+          animated: true,
+        });
+      }
     });
     Keyboard.addListener('keyboardDidHide', e => {
       kbVisibleRef.current = false;
@@ -122,6 +130,12 @@ function App(): JSX.Element {
       setBackKeyPress(false);
     }
   }, [backKeyPress]); // handle here to have up to date state
+
+  useEffect(() => {
+    if (selectCompleted) { // seems to be needed to fix ref not updating properly
+      textScrollRef.current = 0;
+    }
+  }, [selectCompleted]);
 
   useEffect(() => {
     try {
@@ -310,13 +324,6 @@ function App(): JSX.Element {
                 onSelectionChange={e => {
                   if (userHasPressed) {
                     setViewItem({...viewItem, cursor: e.nativeEvent.selection});
-
-                    if (pressRef.current && !kbVisibleRef.current) {
-                      textScrollViewRef.current?.scrollTo({
-                        y: textScrollRef.current + pressRef.current - 120,
-                        animated: true,
-                      });
-                    }
                   }
                   if (!selectCompleted && e.nativeEvent.selection.start === 0) {
                     setSelectCompleted(true);
@@ -325,7 +332,13 @@ function App(): JSX.Element {
                 onPressIn={e => {
                   setViewItem({...viewItem, noKb: false});
                   setUserHasPressed(true);
-                  pressRef.current = e.nativeEvent.pageY;
+                  if (!kbVisibleRef.current) {
+                    pressRef.current = e.nativeEvent.pageY;
+                    scrollWhenPressRef.current = textScrollRef.current;
+                  }
+                  else {
+                    pressRef.current = undefined;
+                  }
                   // !kbVisibleRef.current && !textMomentumRef.current && textScrollViewRef.current?.scrollTo({
                   //   y: textScrollRef.current + e.nativeEvent.pageY - 120,
                   //   animated: true,
