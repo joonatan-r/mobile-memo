@@ -73,7 +73,7 @@ function App(): JSX.Element {
       },
     }),
   ).current;
-  const draggablePos = touch ? [{translateY: pan.y}] : [];
+  const draggablePos = touch ? [{translateY: pan.y}, {translateY: (touch ? touch.y + (DRAGGABLE_HEIGHT / 2) : 0)}] : [];
 
   useEffect(() => {
     // just pressed back from viewing text, scroll now as ref was only now set to a rendered view
@@ -440,7 +440,7 @@ function App(): JSX.Element {
               style={{
                 position: 'absolute',
                 left: 0,
-                top: -DRAGGABLE_HEIGHT + (touch ? touch.y + (DRAGGABLE_HEIGHT / 2) : 0),
+                top: -DRAGGABLE_HEIGHT,
                 zIndex: 10,
                 height: DRAGGABLE_HEIGHT,
                 width: '100%',
