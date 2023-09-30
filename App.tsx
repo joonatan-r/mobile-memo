@@ -42,21 +42,16 @@ function App(): JSX.Element {
   const [selected, setSelected] = useState<number | null>(null);
   const panResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (evt, {dx, dy}) => { // fixes eating touchableopacity on android
-        if (dx > 0 || dy > 0) {
-          return true;
-        }
-        setIdxToMoveTo(null); // seems otherwise can be laggily set to incorrect place
-        return false;
+      onMoveShouldSetPanResponder: () => { // fixes eating touchableopacity on android
+        return !!touchRef.current;
       },
       onPanResponderMove: Animated.event(
         [null, { dy: pan.y }],
         {
           useNativeDriver: false,
           listener: e => {
-            if (touchRef.current) {
-              const newMove = { x: (e.nativeEvent as any).pageX, y: (e.nativeEvent as any).pageY }; 
-              // setMove(newMove);
+            if (touchRef.current && (e.nativeEvent as any).pageX) {
+              const newMove = { x: (e.nativeEvent as any).pageX, y: (e.nativeEvent as any).pageY };
               for (let i = 0; i < layoutRef.current.length; i++) {
                 const layout = layoutRef.current[i];
                 if (layout && newMove.y >= layout.top - scrollRef.current && newMove.y <= layout.bottom - scrollRef.current) {
@@ -73,7 +68,7 @@ function App(): JSX.Element {
       },
     }),
   ).current;
-  const draggablePos = touch ? [{translateY: pan.y}, {translateY: (touch ? touch.y + (DRAGGABLE_HEIGHT / 2) : 0)}] : [];
+  const draggablePos = touch ? [{translateY: pan.y}, {translateY: (touch.y + (DRAGGABLE_HEIGHT / 2))}] : [];
 
   useEffect(() => {
     // just pressed back from viewing text, scroll now as ref was only now set to a rendered view
@@ -380,6 +375,16 @@ function App(): JSX.Element {
                         onLongPress={e => {
                           setTouch({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY });
                           setSelected(idx);
+                          touchRef.current = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY }; // set already to work asap
+
+                          const newMove = { x: (e.nativeEvent as any).pageX, y: (e.nativeEvent as any).pageY };
+                          for (let i = 0; i < layoutRef.current.length; i++) {
+                            const layout = layoutRef.current[i];
+                            if (layout && newMove.y >= layout.top - scrollRef.current && newMove.y <= layout.bottom - scrollRef.current) {
+                              setIdxToMoveTo(i);
+                              break;
+                            }
+                          }
                         }}
                       >
                         <Text
