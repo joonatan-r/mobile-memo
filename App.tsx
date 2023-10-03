@@ -4,10 +4,10 @@ import {
   Alert,
   Animated,
   BackHandler,
-  Button,
   Keyboard,
   PanResponder,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -23,6 +23,7 @@ const ITEM_HEIGHT = 70;
 function App(): JSX.Element {
   const [userHasPressed, setUserHasPressed] = useState(false);
   const [selectCompleted, setSelectCompleted] = useState(false);
+  const [hideCaret, setHideCaret] = useState(false);
   const kbVisibleRef = useRef(false);
   // const textMomentumRef = useRef(false);
   const [backKeyPress, setBackKeyPress] = useState(false);
@@ -96,6 +97,7 @@ function App(): JSX.Element {
     Keyboard.addListener('keyboardDidShow', e => {
       const { height, screenX, screenY, width } = e.endCoordinates;
       kbVisibleRef.current = true;
+      setHideCaret(false);
 
       if (pressRef.current && pressRef.current > screenY - 50) {
         textScrollViewRef.current?.scrollTo({
@@ -203,8 +205,10 @@ function App(): JSX.Element {
             flexDirection: 'column',
             justifyContent: 'space-between',
             alignItems: 'center',
+            flex: 1,
           }}
         >
+          <StatusBar backgroundColor='#000' />
           <View
             style={{
               width: '100%',
@@ -215,7 +219,7 @@ function App(): JSX.Element {
               borderColor: 'black',
               borderBottomWidth: 1,
               padding: 10,
-              backgroundColor: '#ddd',
+              backgroundColor: '#000',
             }}
           >
             <View style={{ width: '50%' }}>
@@ -229,7 +233,7 @@ function App(): JSX.Element {
                   setViewItem(undefined);
                 }}
               >
-                <Text style={{ fontSize: 20 }}>{'\u{2190}'}</Text>
+                <Text style={{ fontSize: 20, color: '#fff' }}>{'\u{2190}'}</Text>
               </TouchableOpacity>
             </View>
             <View style={{ width: '50%', flexDirection: 'row', justifyContent: 'flex-end' }}>
@@ -249,7 +253,7 @@ function App(): JSX.Element {
                     setViewItem(undefined);
                   }}
                 >
-                  <Text style={{ fontSize: 20 }}>{'\u{2713}'}</Text>
+                  <Text style={{ fontSize: 20, color: '#fff' }}>{'\u{2713}'}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
@@ -276,7 +280,7 @@ function App(): JSX.Element {
                   );
                 }}
               >
-                <Text style={{ fontSize: 20 }}>{'\u{1F5D1}'}</Text>
+                <Text style={{ fontSize: 20, color: '#fff' }}>{'\u{1F5D1}'}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -312,6 +316,7 @@ function App(): JSX.Element {
               <TextInput
                 autoFocus={true}
                 multiline={true}
+                caretHidden={hideCaret}
                 showSoftInputOnFocus={!viewItem.noKb}
                 selection={!userHasPressed ? { start: 0 } : viewItem.cursor}
                 style={{ width: '100%' }}
@@ -352,6 +357,22 @@ function App(): JSX.Element {
       : (
         // need onTouchEnd in case not moving after setting touch, in which case pan responder not called
         <View style={styles.appContainer} onTouchEnd={() => setTouch(undefined)}>
+          <StatusBar backgroundColor='#000' />
+          <View
+            style={{
+              width: '100%',
+              height: 50,
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderColor: 'black',
+              borderBottomWidth: 1,
+              padding: 10,
+              backgroundColor: '#000',
+            }}
+          >
+            <Text style={{ fontSize: 20, color: '#fff', paddingLeft: 20 }}>Notes</Text>
+          </View>
           <Animated.View
             style={styles.animateContainer}
             {...panResponder.panHandlers}
@@ -384,6 +405,7 @@ function App(): JSX.Element {
                           setViewItem({ idx, text: `${item}`, edit: false, cursor: { start: 0 }, noKb: true });
                           setUserHasPressed(false);
                           setSelectCompleted(false);
+                          setHideCaret(true);
                         }}
                         onLongPress={e => {
                           setTouch({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY });
@@ -437,18 +459,26 @@ function App(): JSX.Element {
                 justifyContent: 'center',
                 position: 'absolute',
                 alignSelf: 'center',
-                bottom: 40,
+                bottom: 90, // +50 because of header
                 right: 40,
                 zIndex: 20,
                 elevation: 10,
               }}
             >
               <TouchableOpacity
+                style={{
+                  height: '100%',
+                  width: '100%',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
                 onPress={() => {
                   setItems(['', ...items]);
                   setViewItem({ idx: 0, text: '', edit: true, cursor: { start: 0 }, noKb: false });
                   setUserHasPressed(false);
                   setSelectCompleted(true);
+                  setHideCaret(true);
                 }}
               >
                   <Text style={{ fontSize: 30, color: 'white' }}>+</Text>
@@ -458,7 +488,7 @@ function App(): JSX.Element {
               style={{
                 position: 'absolute',
                 left: 0,
-                top: -DRAGGABLE_HEIGHT,
+                top: -DRAGGABLE_HEIGHT - 50, // -50 because of header
                 zIndex: 10,
                 height: DRAGGABLE_HEIGHT,
                 width: '100%',
@@ -489,6 +519,7 @@ const styles = StyleSheet.create({
   animateContainer: {
     height: '100%',
     width: '100%',
+    paddingBottom: 50, // because of header
   },
   scrollContainer: {
     width: '100%',
